@@ -23,9 +23,11 @@ services:
       timeout: 10s
       retries: 3
 
-  # Backend API
+# Backend API
   backend:
-    build: ./backend
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: project_management_backend
     restart: unless-stopped
     environment:
@@ -33,6 +35,12 @@ services:
       SECRET_KEY: your-super-secret-key-change-this-in-production
       ACCESS_TOKEN_EXPIRE_MINUTES: 30
       DATABASE_NAME: project_management
+      ALLOWED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000,http://frontend
+      DEBUG: "true"
+      LOG_LEVEL: info
+      PYTHONPATH: /app
+      # BCrypt optimization
+      BCRYPT_ROUNDS: 12
     ports:
       - "8000:8000"
     depends_on:
@@ -47,7 +55,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      start_period: 30s
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --log-level info
 
   # Frontend React App
   frontend:

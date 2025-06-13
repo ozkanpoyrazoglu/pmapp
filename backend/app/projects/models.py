@@ -1,24 +1,11 @@
+# backend/app/projects/models.py
+
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 from typing import Optional, List, Dict, Any
 from datetime import datetime, date
 from enum import Enum
 from bson import ObjectId
 import re
-
-class PyObjectId(ObjectId):
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, v):
-        if not ObjectId.is_valid(v):
-            raise ValueError("Invalid objectid")
-        return ObjectId(v)
-
-    @classmethod
-    def __get_pydantic_json_schema__(cls, _source_type, _handler):
-        return {"type": "string"}
 
 class TaskStatus(str, Enum):
     NOT_STARTED = "not_started"
@@ -83,6 +70,11 @@ class TaskBase(BaseModel):
             raise ValueError('Efor saati negatif olamaz')
         return v
 
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        validate_default=True,
+    )
+
 class TaskCreate(TaskBase):
     pass
 
@@ -116,18 +108,29 @@ class TaskUpdate(BaseModel):
             raise ValueError('Tamamlanma yüzdesi 0-100 arasında olmalıdır')
         return v
 
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+    )
+
 class Task(TaskBase):
     model_config = ConfigDict(
         populate_by_name=True,
         arbitrary_types_allowed=True,
-        json_encoders={ObjectId: str, date: str}
+        str_strip_whitespace=True,
     )
     
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
-    project_id: PyObjectId
+    id: str = Field(alias="_id")
+    project_id: str
     created_by: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    @field_validator('id', 'project_id', mode='before')
+    @classmethod
+    def validate_object_ids(cls, v):
+        if isinstance(v, ObjectId):
+            return str(v)
+        return str(v)
 
 class ProjectBase(BaseModel):
     name: str
@@ -154,6 +157,11 @@ class ProjectBase(BaseModel):
                 raise ValueError(f'Geçersiz email adresi: {email}')
         return v
 
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        validate_default=True,
+    )
+
 class ProjectCreate(ProjectBase):
     pass
 
@@ -173,14 +181,25 @@ class ProjectUpdate(BaseModel):
             raise ValueError('Proje adı boş olamaz')
         return v.strip() if v else v
 
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+    )
+
 class Project(ProjectBase):
     model_config = ConfigDict(
         populate_by_name=True,
         arbitrary_types_allowed=True,
-        json_encoders={ObjectId: str, date: str}
+        str_strip_whitespace=True,
     )
     
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    id: str = Field(alias="_id")
     owner: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    @field_validator('id', mode='before')
+    @classmethod
+    def validate_id(cls, v):
+        if isinstance(v, ObjectId):
+            return str(v)
+        return str(v)
