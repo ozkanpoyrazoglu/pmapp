@@ -1,7 +1,7 @@
 // frontend/src/components/TaskList.tsx
 
 import React, { useState } from 'react';
-import { apiClient, Task } from '../api/api';
+import { apiClient, Task, TaskUpdate } from '../api/api';
 
 interface TaskListProps {
   tasks: Task[];

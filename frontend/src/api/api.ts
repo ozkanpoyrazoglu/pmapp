@@ -49,7 +49,25 @@ export interface Task {
 }
 
 export interface TaskCreate {
-  name: string;
+  name: string; // Required field
+  description?: string;
+  task_type?: 'task' | 'epic' | 'milestone';
+  status?: 'not_started' | 'in_progress' | 'completed' | 'on_hold' | 'cancelled';
+  priority?: 'low' | 'medium' | 'high' | 'critical';
+  start_date?: string;
+  end_date?: string;
+  duration_days?: number;
+  effort_hours?: number;
+  completion_percentage?: number;
+  assigned_to?: string;
+  dependencies?: string[];
+  parent_epic?: string;
+  tags?: string[];
+  custom_fields?: Record<string, any>;
+}
+
+export interface TaskUpdate {
+  name?: string;
   description?: string;
   task_type?: 'task' | 'epic' | 'milestone';
   status?: 'not_started' | 'in_progress' | 'completed' | 'on_hold' | 'cancelled';
@@ -206,7 +224,7 @@ class ApiClient {
   async updateTask(
     projectId: string,
     taskId: string,
-    taskData: Partial<TaskCreate>
+    taskData: TaskUpdate
   ): Promise<Task> {
     return this.request<Task>(`/api/projects/${projectId}/tasks/${taskId}`, {
       method: 'PUT',

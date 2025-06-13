@@ -117,8 +117,8 @@ const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
     setError(null);
 
     try {
-      // Boş değerleri temizle
-      const cleanedData: TaskCreate = {};
+      // Boş değerleri temizle ve valid TaskCreate objesi oluştur
+      const cleanedData: Partial<TaskCreate> = {};
       
       Object.entries(formData).forEach(([key, value]) => {
         if (value !== '' && value !== undefined && value !== null) {
@@ -129,7 +129,12 @@ const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
         }
       });
 
-      const newTask = await apiClient.createTask(projectId, cleanedData);
+      // Name alanının var olduğundan emin ol (validation'dan geçti)
+      if (!cleanedData.name) {
+        throw new Error('Görev adı gereklidir');
+      }
+
+      const newTask = await apiClient.createTask(projectId, cleanedData as TaskCreate);
       onTaskCreated(newTask);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Görev oluşturulurken bir hata oluştu');
