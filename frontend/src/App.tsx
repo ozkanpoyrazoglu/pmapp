@@ -1,60 +1,107 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import { ProjectProvider } from './contexts/ProjectContext';
-import ProtectedRoute from './components/auth/ProtectedRoute';
-import Layout from './components/layout/Layout';
-import LoginPage from './pages/auth/LoginPage';
-import RegisterPage from './pages/auth/RegisterPage';
+import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ProjectsPage from './pages/ProjectsPage';
-import LoadingSpinner from './components/ui/LoadingSpinner';
-import { useAuth } from './contexts/AuthContext';
+import Layout from './components/Layout';
 
-const AppContent: React.FC = () => {
-  const { isLoading } = useAuth();
+// Basit user type
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
+// Demo projeler
+const demoProjects = [
+  {
+    id: '1',
+    name: 'Website Yenileme',
+    description: 'Şirket websitesini yeniden tasarlama',
+    status: 'Devam Ediyor',
+    progress: 65
+  },
+  {
+    id: '2', 
+    name: 'Mobil Uygulama',
+    description: 'iOS ve Android uygulaması geliştirme',
+    status: 'Başlamadı',
+    progress: 0
+  },
+  {
+    id: '3',
+    name: 'E-ticaret Entegrasyonu',
+    description: 'Online satış sistemi kurulumu',
+    status: 'Tamamlandı',
+    progress: 100
   }
+];
+
+function App() {
+  const [user, setUser] = useState<User | null>(null);
+
+  // Basit login fonksiyonu
+  const handleLogin = (email: string, password: string) => {
+    if (email === 'demo@example.com' && password === 'demo123') {
+      setUser({
+        id: '1',
+        name: 'Demo Kullanıcı',
+        email: 'demo@example.com'
+      });
+      return true;
+    }
+    return false;
+  };
+
+  // Logout fonksiyonu
+  const handleLogout = () => {
+    setUser(null);
+  };
+
+  // Login kontrolü
+  const isAuthenticated = !!user;
 
   return (
     <Router>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        
-        {/* Protected routes */}
-        <Route path="/" element={
-          <ProtectedRoute>
-            <Layout />
-          </ProtectedRoute>
-        }>
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="projects" element={<ProjectsPage />} />
-        </Route>
-        
-        {/* Catch all route */}
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
+      <div className="min-h-screen bg-gray-50">
+        <Routes>
+          {/* Login route */}
+          <Route 
+            path="/login" 
+            element={
+              isAuthenticated ? 
+                <Navigate to="/dashboard" replace /> : 
+                <LoginPage onLogin={handleLogin} />
+            } 
+          />
+          
+          {/* Protected routes */}
+          <Route 
+            path="/*" 
+            element={
+              isAuthenticated ? (
+                <Layout user={user} onLogout={handleLogout}>
+                  <Routes>
+                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                    <Route 
+                      path="/dashboard" 
+                      element={<DashboardPage projects={demoProjects} />} 
+                    />
+                    <Route 
+                      path="/projects" 
+                      element={<ProjectsPage projects={demoProjects} />} 
+                    />
+                  </Routes>
+                </Layout>
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            } 
+          />
+        </Routes>
+      </div>
     </Router>
   );
-};
-
-const App: React.FC = () => {
-  return (
-    <AuthProvider>
-      <ProjectProvider>
-        <AppContent />
-      </ProjectProvider>
-    </AuthProvider>
-  );
-};
+}
 
 export default App;
