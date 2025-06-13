@@ -1,3 +1,5 @@
+# backend/app/main.py
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -24,18 +26,28 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS middleware
+# CORS middleware - Updated for better development support
+origins = [
+    "http://localhost:3000",  # Frontend development
+    "http://localhost",       # Frontend production
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1",
+    "https://localhost:3000", # HTTPS development
+    "https://localhost",      # HTTPS production
+]
+
+# Get origins from environment if provided
+env_origins = os.getenv("ALLOWED_ORIGINS")
+if env_origins:
+    origins.extend(env_origins.split(","))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",  # Frontend development
-        "http://localhost",       # Frontend production
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1",
-    ],
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Routes
@@ -44,11 +56,26 @@ app.include_router(projects_router, prefix="/api/projects", tags=["projects"])
 
 @app.get("/")
 async def root():
-    return {"message": "Project Management API", "version": "1.0.0"}
+    return {"message": "Project Management API", "version": "1.0.0", "status": "running"}
 
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "message": "API is running"}
+
+# Error handlers
+@app.exception_handler(404)
+async def not_found_handler(request, exc):
+    return JSONResponse(
+        status_code=404,
+        content={"detail": "Not found", "path": str(request.url)}
+    )
+
+@app.exception_handler(500)
+async def internal_error_handler(request, exc):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"}
+    )
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
