@@ -1,0 +1,7 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Disallow: /api/
+Allow: /
+
+# Sitemap location (if you add one later)
+# Sitemap: https://yourdomain.com/sitemap.xml
